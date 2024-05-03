@@ -1,44 +1,44 @@
-#!/usr/bin/python3
-""" script that reads stdin line by line and computes metrics """
-
 import sys
 
-
-def printsts(dic, size):
-    """ Prints information """
-    print("File size: {:d}".format(size))
-    for i in sorted(dic.keys()):
-        if dic[i] != 0:
-            print("{}: {:d}".format(i, dic[i]))
+#!/usr/bin/env python3
 
 
-sts = {"200": 0, "301": 0, "400": 0, "401": 0, "403": 0,
-       "404": 0, "405": 0, "500": 0}
+def print_stats(total_size, status_codes):
+    print("Total file size:", total_size)
+    for code in sorted(status_codes.keys()):
+        if status_codes[code] > 0:
+            print(f"{code}: {status_codes[code]}")
 
-count = 0
-size = 0
+def parse_line(line):
+    try:
+        parts = line.split()
+        ip_address = parts[0]
+        status_code = int(parts[-2])
+        file_size = int(parts[-1])
+        return ip_address, status_code, file_size
+    except (IndexError, ValueError):
+        return None
 
-try:
-    for line in sys.stdin:
-        if count != 0 and count % 10 == 0:
-            printsts(sts, size)
+def main():
+    total_size = 0
+    status_codes = {200: 0, 301: 0, 400: 0, 401: 0, 403: 0, 404: 0, 405: 0, 500: 0}
+    line_count = 0
 
-        stlist = line.split()
-        count += 1
+    try:
+        for line in sys.stdin:
+            line = line.strip()
+            parsed_line = parse_line(line)
+            if parsed_line:
+                ip_address, status_code, file_size = parsed_line
+                total_size += file_size
+                status_codes[status_code] += 1
+                line_count += 1
 
-        try:
-            size += int(stlist[-1])
-        except:
-            pass
+            if line_count % 10 == 0:
+                print_stats(total_size, status_codes)
 
-        try:
-            if stlist[-2] in sts:
-                sts[stlist[-2]] += 1
-        except:
-            pass
-    printsts(sts, size)
+    except KeyboardInterrupt:
+        print_stats(total_size, status_codes)
 
-
-except KeyboardInterrupt:
-    printsts(sts, size)
-    raise
+if __name__ == "__main__":
+    main()
